@@ -50,11 +50,6 @@ set_global_assignment -name DEVICE_FILTER_PACKAGE FBGA
 set_global_assignment -name DEVICE_FILTER_PIN_COUNT 672
 set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
 set_global_assignment -name OPTIMIZATION_TECHNIQUE SPEED
-set_global_assignment -name VHDL_FILE ../ReadBRAM/sample_RAM.vhd
-set_global_assignment -name VHDL_FILE ../ReadBRAM/ReadBRAM.vhd
-set_global_assignment -name VHDL_FILE ../HDMI_out/vga_640x480.vhd
-set_global_assignment -name VHDL_FILE ../HDMI_out/clkdiv.vhd
-set_global_assignment -name VHDL_FILE graphics_pipe_top.vhd
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
@@ -316,18 +311,23 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -entity SPI_to_BRAM_to
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -entity SPI_to_BRAM_top -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -entity SPI_to_BRAM_top -section_id Top
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -entity SPI_to_BRAM_top -section_id Top
-set_global_assignment -name CDF_FILE output_files/Chain3.cdf
-set_global_assignment -name VHDL_FILE sincoslut.vhd
-set_global_assignment -name VHDL_FILE sincoslutFXP.vhd
-set_global_assignment -name SDC_FILE graphics_pipe_top.out.sdc
 set_global_assignment -name VHDL_INPUT_VERSION VHDL_1993
 set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name VHDL_FILE vga_640x480.vhd
+set_global_assignment -name VHDL_FILE clkdiv.vhd
+set_global_assignment -name VHDL_FILE sample_RAM.vhd
+set_global_assignment -name VHDL_FILE ReadBRAM.vhd
+set_global_assignment -name VHDL_FILE graphics_pipe_top.vhd
+set_global_assignment -name CDF_FILE output_files/Chain3.cdf
+set_global_assignment -name VHDL_FILE sincoslut.vhd
+set_global_assignment -name VHDL_FILE sincoslutFXP.vhd
+set_global_assignment -name SDC_FILE graphics_pipe_top.out.sdc
 set_global_assignment -name VHDL_FILE float_pkg_c.vhdl
 set_global_assignment -name VHDL_FILE fixed_pkg_c.vhdl
 set_global_assignment -name VHDL_FILE fixed_float_types_c.vhdl
 set_global_assignment -name VHDL_FILE vector_math_pkg.vhd
 set_global_assignment -name VHDL_FILE ADC_reader.vhd
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
