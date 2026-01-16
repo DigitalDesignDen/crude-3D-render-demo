@@ -1,0 +1,1 @@
+A deliberately crude and experimental, but functional 3D graphics pipeline written in VHDL. Fixed-point math, matrix transforms, perspective projection, and basic rendering experiments targeting FPGA hardware. Built for learning, tinkering, and iterative improvement. Not pretty, not fast, but real hardware 3D — and a playground for improvement.
