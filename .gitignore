@@ -42,3 +42,5 @@ greybox_tmp/
 
 # ignore image files for README.md
 #images/
+# ignore image files
+images/
