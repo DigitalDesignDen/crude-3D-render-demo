@@ -39,3 +39,6 @@ output_files/
 hc_output/
 .qsys_edit/
 greybox_tmp/
+
+# ignore image files for README.md
+images/
