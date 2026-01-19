@@ -8,7 +8,7 @@ A deliberately crude and experimental, but functional 3D graphics pipeline writt
 
 > A minimal and intentionally crude 3D graphics pipeline implemented in VHDL and running on an FPGA.
 
-![Demo screenshot](images/icosphere_wireframe.png)
+![Demo screenshot](images/cube0.gif)
 
 
 
