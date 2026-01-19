@@ -41,4 +41,4 @@ hc_output/
 greybox_tmp/
 
 # ignore image files for README.md
-images/
+#images/
