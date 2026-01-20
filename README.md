@@ -67,8 +67,8 @@ Video Output
  ├── *.qpf          &ensp;&ensp;&nbsp;&emsp;&emsp;&emsp;&emsp;# Quartus project file<br>
  ├── *.qsf          &nbsp;&ensp;&ensp;&nbsp;&emsp;&emsp;&emsp;&emsp;# Some Quartus file<br>
  ├── *.sdc          &nbsp;&emsp;&emsp;&emsp;&emsp;&emsp;# Synopsys design contraint file (timing constraints)<br>
- ├── compile_wo_sta &ensp;# Batch file for command line compilation via Quartus II API (w/o static timing analysis)<br>
- ├── compile_w_sta  &emsp;# Batch file for command line compilation via Quartus II API (with static timing analysis)<br>
+ ├── compile_wo_sta &ensp;# .bat for cmd compilation via Quartus II API (w/o static timing analysis)<br>
+ ├── compile_w_sta  &emsp;# .bat for cmd compilation via Quartus II API (with static timing analysis)<br>
  └── *.vhd          &emsp;&emsp;&emsp;&emsp;&emsp;# VHDL source files
 
 ---
