@@ -1,4 +1,13 @@
--- ADC_read
+-- ADC_reader.vhd
+-- Author: DigitalDesignDen (Patrick Goncalves)
+-- Date: June 6, 2024
+-- Description:
+-- This file contains an SPI ADC reader module for interfacing with a 12-bit ADC.
+-- ADC IC used: LTC2308.
+-- The module generates the necessary control signals to initiate conversions.
+-- It reads the 12-bit data output from the ADC channel "AD7" and provides it as a standard logic vector output.
+-- The module assumes a clock input of 25MHz to meet the timing requirements of the ADC.
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -7,7 +16,7 @@ entity ADC_read is
 
 	port(
 		-- clocks
-		clk	:	in std_logic;
+		clk	:	in std_logic;			-- 25MHz clock input
 		
 		-- adc
 		ADC_CONVST	:	out std_logic;
