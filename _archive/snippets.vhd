@@ -1,3 +1,17 @@
+-- snippets.vhd
+-- Author: DigitalDesignDen (Patrick Goncalves)
+-- Date: June 6, 2024
+-- Description:
+-- This file contains snippets of code for a 3D graphics pipeline rendering to HDMI output
+-- that have been used often during development of different approached to the problem.
+-- These snippets include a pipelined matrix
+-- multiplication and perspective division process, as well as a non-pipelined version.
+
+
+
+
+
+
 signal vertex_index : integer range 0 to s_modelVertices'length-1 := 0;
 signal stage : integer range 0 to 3 := 0;
 
