@@ -1,4 +1,24 @@
--- graphics_pipe_top
+-- graphics_pipe_top_in0.vhd
+-- Author: DigitalDesignDen (Patrick Goncalves)
+-- Date: June 6, 2024
+-- Description:
+-- Top-level VHDL module for a 3D graphics pipeline rendering to HDMI output
+-- This module includes a 3D model auto rotation and projection pipeline,
+-- and outputs the projected vertices as points on a 640x480 display.
+-- The design targets an FPGA platform with a 50 MHz input clock, generating a 25 MHz pixel clock for VGA timing.
+
+-- Trade-offs and Limitations:
+-- The int0 version of the design uses an integer matrix multiplication approach for transformations.
+-- No fixed-point or floating-point arithmetic is used.
+-- Due to rounding and scaling limitations with integer math, the rendered model appears to move in a choppy manner 
+-- when vertices are changing depth (z).
+-- This is a trade-off for using integer arithmetic instead of floating-point, which would require more resources.
+-- If you change the constant s_modelVertices to use a different model (e.g., s_suzanneModel or s_cubeModel),
+-- the success of place and route is not given due to differences in vertex count.
+-- The icosphere model (s_icosphereModel) is chosen for a balance between visual quality and resource usage.
+-- The design currently supports only point rendering of vertices.
+
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -197,48 +217,50 @@ constant s_suzanneModel				: t_P3_collection			:= (
 	(-135, 11, -64, 1),
 	(135, 11, -64, 1));
 
-constant s_icosphereModel			: t_P3_collection			:= ((0, 0, -171, 1),
-(124, -90, -76, 1),
-(-47, -145, -76, 1),
-(-153, 0, -76, 1),
-(-47, 145, -76, 1),
-(124, 90, -76, 1),
-(47, -145, 76, 1),
-(-124, -90, 76, 1),
-(-124, 90, 76, 1),
-(47, 145, 76, 1),
-(153, 0, 76, 1),
-(0, 0, 171, 1),
-(-27, -85, -145, 1),
-(72, -52, -145, 1),
-(45, -138, -90, 1),
-(145, 0, -90, 1),
-(72, 52, -145, 1),
-(-90, 0, -145, 1),
-(-118, -85, -90, 1),
-(-27, 85, -145, 1),
-(-118, 85, -90, 1),
-(45, 138, -90, 1),
-(163, -52, 0, 1),
-(163, 52, 0, 1),
-(0, -171, 0, 1),
-(100, -138, 0, 1),
-(-163, -52, 0, 1),
-(-100, -138, 0, 1),
-(-100, 138, 0, 1),
-(-163, 52, 0, 1),
-(100, 138, 0, 1),
-(0, 171, 0, 1),
-(118, -85, 90, 1),
-(-45, -138, 90, 1),
-(-145, 0, 90, 1),
-(-45, 138, 90, 1),
-(118, 85, 90, 1),
-(27, -85, 145, 1),
-(90, 0, 145, 1),
-(-72, -52, 145, 1),
-(-72, 52, 145, 1),
-(27, 85, 145, 1));
+
+constant s_icosphereModel			: t_P3_collection			:= (
+	(0, 0, -171, 1),
+	(124, -90, -76, 1),
+	(-47, -145, -76, 1),
+	(-153, 0, -76, 1),
+	(-47, 145, -76, 1),
+	(124, 90, -76, 1),
+	(47, -145, 76, 1),
+	(-124, -90, 76, 1),
+	(-124, 90, 76, 1),
+	(47, 145, 76, 1),
+	(153, 0, 76, 1),
+	(0, 0, 171, 1),
+	(-27, -85, -145, 1),
+	(72, -52, -145, 1),
+	(45, -138, -90, 1),
+	(145, 0, -90, 1),
+	(72, 52, -145, 1),
+	(-90, 0, -145, 1),
+	(-118, -85, -90, 1),
+	(-27, 85, -145, 1),
+	(-118, 85, -90, 1),
+	(45, 138, -90, 1),
+	(163, -52, 0, 1),
+	(163, 52, 0, 1),
+	(0, -171, 0, 1),
+	(100, -138, 0, 1),
+	(-163, -52, 0, 1),
+	(-100, -138, 0, 1),
+	(-100, 138, 0, 1),
+	(-163, 52, 0, 1),
+	(100, 138, 0, 1),
+	(0, 171, 0, 1),
+	(118, -85, 90, 1),
+	(-45, -138, 90, 1),
+	(-145, 0, 90, 1),
+	(-45, 138, 90, 1),
+	(118, 85, 90, 1),
+	(27, -85, 145, 1),
+	(90, 0, 145, 1),
+	(-72, -52, 145, 1),
+	(-72, 52, 145, 1),
+	(27, 85, 145, 1));
 
 constant s_cubeModel			: t_P3_collection := (
 	(-35, 39, 207, 1),
