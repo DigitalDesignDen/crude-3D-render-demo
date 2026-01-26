@@ -1,4 +1,33 @@
--- graphics_pipe_top
+-- graphics_pipe_top.vhd
+-- Author: DigitalDesignDen (Patrick Goncalves)
+-- Date: June 6, 2024
+-- Description:
+-- Top-level VHDL module for a 3D graphics pipeline rendering to HDMI output
+-- This module includes a 3D model rotation and projection pipeline with analog (ADC) user input for rotation angle.
+-- If you do have an ADC or don't want to use it, you can tie off the ADC signals and set a fixed angle increment in the rotation process.
+-- It outputs the projected vertices as points on a 640x480 display.
+-- The design targets an FPGA platform with a 50 MHz input clock, generating a 25 MHz pixel clock for VGA timing.
+-- The design currently supports rendering a single 3D model defined by the constant s_modelVertices.
+-- Takes around 6 minutes to synthesize, place & route, assemble, and program for a mid-range FPGA (e.g., Cyclone V).
+
+-- Trade-offs and Limitations:
+-- This is the most up to date version of the design.
+-- IT utilizes fixed-point arithmetic for 3D transformations and projections.
+-- Choppy movement when vertices are changing depth (z) is fixed in this version.
+
+-- The design can render lines betwen projectes vertices, but the definition is currently hard coded for a cube.
+-- The method of line drawing is basic and may not be optimal for performance or visual quality.
+-- It uses vector math operations defined in an external package (vector_math_pkg) to perform the line drawing.
+-- This method is very resource intesive since it calculates the linear dependency for each pixel to each vertex on-the-fly
+-- starting new for each pixel. A more efficient approach would be to use Bresenham's line algorithm or a similar method.
+-- This would require a framebuffer or line buffer to store pixel data, which is not implemented in this design.
+
+-- The design does not include advanced features like backface culling, shading, or texture mapping.
+
+-- If you change the constant s_modelVertices to use a different model (e.g., s_suzanneModel or s_cubeModel),
+-- the success of place and route may not be given due to differences in vertex count.
+-- The cube model is chosen for a balance between visual quality and resource usage.
+
 library ieee;
 use work.fixed_pkg.all;
 use ieee.std_logic_1164.all;
@@ -72,59 +101,59 @@ constant test_vertex		: t_P3_collection := (
 	);
 
 constant cube				: t_P3_collection := (
-(to_sfixed(-2.3225905895233154,10,-8), to_sfixed(2.5303754806518555,10,-8), to_sfixed(13.423962593078613,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-6.359494209289551,10,-8), to_sfixed(12.235384941101074,10,-8), to_sfixed(1.360952615737915,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(12.06867790222168,10,-8), to_sfixed(0.2855377197265625,10,-8), to_sfixed(6.801873207092285,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(8.031774520874023,10,-8), to_sfixed(9.990547180175781,10,-8), to_sfixed(-5.261137008666992,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-8.031774520874023,10,-8), to_sfixed(-9.990547180175781,10,-8), to_sfixed(5.261137008666992,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-12.06867790222168,10,-8), to_sfixed(-0.2855377197265625,10,-8), to_sfixed(-6.801873207092285,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(6.359494209289551,10,-8), to_sfixed(-12.235384941101074,10,-8), to_sfixed(-1.360952615737915,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(2.3225905895233154,10,-8), to_sfixed(-2.5303754806518555,10,-8), to_sfixed(-13.423962593078613,10,-8), to_sfixed(1.0,10,-8))
+	(to_sfixed(-2.3225905895233154,10,-8), to_sfixed(2.5303754806518555,10,-8), to_sfixed(13.423962593078613,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-6.359494209289551,10,-8), to_sfixed(12.235384941101074,10,-8), to_sfixed(1.360952615737915,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(12.06867790222168,10,-8), to_sfixed(0.2855377197265625,10,-8), to_sfixed(6.801873207092285,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(8.031774520874023,10,-8), to_sfixed(9.990547180175781,10,-8), to_sfixed(-5.261137008666992,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-8.031774520874023,10,-8), to_sfixed(-9.990547180175781,10,-8), to_sfixed(5.261137008666992,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-12.06867790222168,10,-8), to_sfixed(-0.2855377197265625,10,-8), to_sfixed(-6.801873207092285,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(6.359494209289551,10,-8), to_sfixed(-12.235384941101074,10,-8), to_sfixed(-1.360952615737915,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(2.3225905895233154,10,-8), to_sfixed(-2.5303754806518555,10,-8), to_sfixed(-13.423962593078613,10,-8), to_sfixed(1.0,10,-8))
 );
 
 constant icosphere			: t_P3_collection := (
-(to_sfixed(0.0,10,-8), to_sfixed(0.0,10,-8), to_sfixed(-8.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(5.788858413696289,10,-8), to_sfixed(-4.2058024406433105,10,-8), to_sfixed(-3.57775616645813,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-2.211104154586792,10,-8), to_sfixed(-6.805193901062012,10,-8), to_sfixed(-3.5777587890625,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-7.155409812927246,10,-8), to_sfixed(0.0,10,-8), to_sfixed(-3.5777249336242676,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-2.211104154586792,10,-8), to_sfixed(6.805193901062012,10,-8), to_sfixed(-3.5777587890625,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(5.788858413696289,10,-8), to_sfixed(4.2058024406433105,10,-8), to_sfixed(-3.57775616645813,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(2.211104154586792,10,-8), to_sfixed(-6.805193901062012,10,-8), to_sfixed(3.5777587890625,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-5.788858413696289,10,-8), to_sfixed(-4.2058024406433105,10,-8), to_sfixed(3.57775616645813,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-5.788858413696289,10,-8), to_sfixed(4.2058024406433105,10,-8), to_sfixed(3.57775616645813,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(2.211104154586792,10,-8), to_sfixed(6.805193901062012,10,-8), to_sfixed(3.5777587890625,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(7.155409812927246,10,-8), to_sfixed(0.0,10,-8), to_sfixed(3.5777249336242676,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(0.0,10,-8), to_sfixed(0.0,10,-8), to_sfixed(8.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-1.2996444702148438,10,-8), to_sfixed(-3.999962091445923,10,-8), to_sfixed(-6.805235385894775,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(3.4025814533233643,10,-8), to_sfixed(-2.4720911979675293,10,-8), to_sfixed(-6.805233478546143,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(2.1029505729675293,10,-8), to_sfixed(-6.472093105316162,10,-8), to_sfixed(-4.205901145935059,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(6.805182933807373,10,-8), to_sfixed(0.0,10,-8), to_sfixed(-4.205887317657471,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(3.4025814533233643,10,-8), to_sfixed(2.4720911979675293,10,-8), to_sfixed(-6.805233478546143,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-4.205838203430176,10,-8), to_sfixed(0.0,10,-8), to_sfixed(-6.805213451385498,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-5.505515098571777,10,-8), to_sfixed(-3.9999754428863525,10,-8), to_sfixed(-4.205889701843262,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-1.2996444702148438,10,-8), to_sfixed(3.999962091445923,10,-8), to_sfixed(-6.805235385894775,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-5.505515098571777,10,-8), to_sfixed(3.9999754428863525,10,-8), to_sfixed(-4.205889701843262,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(2.1029505729675293,10,-8), to_sfixed(6.472093105316162,10,-8), to_sfixed(-4.205901145935059,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(7.608462810516357,10,-8), to_sfixed(-2.4721009731292725,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(7.608462810516357,10,-8), to_sfixed(2.4721009731292725,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(0.0,10,-8), to_sfixed(-7.999999523162842,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(4.702284812927246,10,-8), to_sfixed(-6.472133636474609,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-7.608462810516357,10,-8), to_sfixed(-2.4721009731292725,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-4.702284812927246,10,-8), to_sfixed(-6.472133636474609,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-4.702284812927246,10,-8), to_sfixed(6.472133636474609,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-7.608462810516357,10,-8), to_sfixed(2.4721009731292725,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(4.702284812927246,10,-8), to_sfixed(6.472133636474609,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(0.0,10,-8), to_sfixed(7.999999523162842,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(5.505515098571777,10,-8), to_sfixed(-3.9999754428863525,10,-8), to_sfixed(4.205889701843262,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-2.1029505729675293,10,-8), to_sfixed(-6.472093105316162,10,-8), to_sfixed(4.205901145935059,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-6.805182933807373,10,-8), to_sfixed(0.0,10,-8), to_sfixed(4.205887317657471,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-2.1029505729675293,10,-8), to_sfixed(6.472093105316162,10,-8), to_sfixed(4.205901145935059,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(5.505515098571777,10,-8), to_sfixed(3.9999754428863525,10,-8), to_sfixed(4.205889701843262,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(1.2996444702148438,10,-8), to_sfixed(-3.999962091445923,10,-8), to_sfixed(6.805234909057617,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(4.205838203430176,10,-8), to_sfixed(0.0,10,-8), to_sfixed(6.805213451385498,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-3.4025814533233643,10,-8), to_sfixed(-2.4720911979675293,10,-8), to_sfixed(6.805233478546143,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(-3.4025814533233643,10,-8), to_sfixed(2.4720911979675293,10,-8), to_sfixed(6.805233478546143,10,-8), to_sfixed(1.0,10,-8)),
-(to_sfixed(1.2996444702148438,10,-8), to_sfixed(3.999962091445923,10,-8), to_sfixed(6.805234909057617,10,-8), to_sfixed(1.0,10,-8))
+	(to_sfixed(0.0,10,-8), to_sfixed(0.0,10,-8), to_sfixed(-8.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(5.788858413696289,10,-8), to_sfixed(-4.2058024406433105,10,-8), to_sfixed(-3.57775616645813,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-2.211104154586792,10,-8), to_sfixed(-6.805193901062012,10,-8), to_sfixed(-3.5777587890625,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-7.155409812927246,10,-8), to_sfixed(0.0,10,-8), to_sfixed(-3.5777249336242676,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-2.211104154586792,10,-8), to_sfixed(6.805193901062012,10,-8), to_sfixed(-3.5777587890625,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(5.788858413696289,10,-8), to_sfixed(4.2058024406433105,10,-8), to_sfixed(-3.57775616645813,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(2.211104154586792,10,-8), to_sfixed(-6.805193901062012,10,-8), to_sfixed(3.5777587890625,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-5.788858413696289,10,-8), to_sfixed(-4.2058024406433105,10,-8), to_sfixed(3.57775616645813,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-5.788858413696289,10,-8), to_sfixed(4.2058024406433105,10,-8), to_sfixed(3.57775616645813,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(2.211104154586792,10,-8), to_sfixed(6.805193901062012,10,-8), to_sfixed(3.5777587890625,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(7.155409812927246,10,-8), to_sfixed(0.0,10,-8), to_sfixed(3.5777249336242676,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(0.0,10,-8), to_sfixed(0.0,10,-8), to_sfixed(8.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-1.2996444702148438,10,-8), to_sfixed(-3.999962091445923,10,-8), to_sfixed(-6.805235385894775,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(3.4025814533233643,10,-8), to_sfixed(-2.4720911979675293,10,-8), to_sfixed(-6.805233478546143,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(2.1029505729675293,10,-8), to_sfixed(-6.472093105316162,10,-8), to_sfixed(-4.205901145935059,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(6.805182933807373,10,-8), to_sfixed(0.0,10,-8), to_sfixed(-4.205887317657471,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(3.4025814533233643,10,-8), to_sfixed(2.4720911979675293,10,-8), to_sfixed(-6.805233478546143,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-4.205838203430176,10,-8), to_sfixed(0.0,10,-8), to_sfixed(-6.805213451385498,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-5.505515098571777,10,-8), to_sfixed(-3.9999754428863525,10,-8), to_sfixed(-4.205889701843262,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-1.2996444702148438,10,-8), to_sfixed(3.999962091445923,10,-8), to_sfixed(-6.805235385894775,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-5.505515098571777,10,-8), to_sfixed(3.9999754428863525,10,-8), to_sfixed(-4.205889701843262,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(2.1029505729675293,10,-8), to_sfixed(6.472093105316162,10,-8), to_sfixed(-4.205901145935059,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(7.608462810516357,10,-8), to_sfixed(-2.4721009731292725,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(7.608462810516357,10,-8), to_sfixed(2.4721009731292725,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(0.0,10,-8), to_sfixed(-7.999999523162842,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(4.702284812927246,10,-8), to_sfixed(-6.472133636474609,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-7.608462810516357,10,-8), to_sfixed(-2.4721009731292725,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-4.702284812927246,10,-8), to_sfixed(-6.472133636474609,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-4.702284812927246,10,-8), to_sfixed(6.472133636474609,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-7.608462810516357,10,-8), to_sfixed(2.4721009731292725,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(4.702284812927246,10,-8), to_sfixed(6.472133636474609,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(0.0,10,-8), to_sfixed(7.999999523162842,10,-8), to_sfixed(0.0,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(5.505515098571777,10,-8), to_sfixed(-3.9999754428863525,10,-8), to_sfixed(4.205889701843262,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-2.1029505729675293,10,-8), to_sfixed(-6.472093105316162,10,-8), to_sfixed(4.205901145935059,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-6.805182933807373,10,-8), to_sfixed(0.0,10,-8), to_sfixed(4.205887317657471,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-2.1029505729675293,10,-8), to_sfixed(6.472093105316162,10,-8), to_sfixed(4.205901145935059,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(5.505515098571777,10,-8), to_sfixed(3.9999754428863525,10,-8), to_sfixed(4.205889701843262,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(1.2996444702148438,10,-8), to_sfixed(-3.999962091445923,10,-8), to_sfixed(6.805234909057617,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(4.205838203430176,10,-8), to_sfixed(0.0,10,-8), to_sfixed(6.805213451385498,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-3.4025814533233643,10,-8), to_sfixed(-2.4720911979675293,10,-8), to_sfixed(6.805233478546143,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(-3.4025814533233643,10,-8), to_sfixed(2.4720911979675293,10,-8), to_sfixed(6.805233478546143,10,-8), to_sfixed(1.0,10,-8)),
+	(to_sfixed(1.2996444702148438,10,-8), to_sfixed(3.999962091445923,10,-8), to_sfixed(6.805234909057617,10,-8), to_sfixed(1.0,10,-8))
 );
 
 constant spaceship_vertices : t_P3_collection := (
@@ -485,7 +514,7 @@ end process;
 						
 						
 	U2 : clkdiv
-		port map (mclk => CLOCK_50_B5B, clr => '1', clk25 => clock_25);
+		port map (mclk => CLOCK_50_B5B, clr => '0', clk_out => clock_25);
 
 	U3 : sincoslut_fixed
 		port map ((255-angle_index), sin_value, cos_value);

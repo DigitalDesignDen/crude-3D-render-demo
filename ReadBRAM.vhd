@@ -46,7 +46,7 @@ begin
 						
 						
 	U2 : clkdiv
-		port map (mclk => CLOCK_50_B5B, clr => '1', clk25 => clock_25);
+		port map (mclk => CLOCK_50_B5B, clr => '0', clk_out => clock_25);
 		
 	U3 : sample_RAM
 		port map (clk_a => clock_25, clk_b => '0', addr_a => addr_read, addr_b => 0,
