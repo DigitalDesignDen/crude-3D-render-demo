@@ -48,7 +48,7 @@ create_clock -name CLK_50 -period 20.000 [get_ports {CLOCK_50_B5B}]
 
 create_generated_clock -name CLK_25 -divide_by 2 -source [get_ports {CLOCK_50_B5B}] [get_registers {clkdiv:U2|counter[0]}]
 
-#[get_pins {clkdiv:U2|clk25}]
+#[get_pins {clkdiv:U2|clk_out}]
 
 
 
